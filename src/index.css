@@ -17,3 +17,18 @@
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Enable smooth transitions for theme changes (fallback for browsers without View Transitions API) */
+.theme-transitioning,
+.theme-transitioning * {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke !important;
+  transition-duration: 500ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Custom cross-fade animations for browsers supporting View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 500ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+

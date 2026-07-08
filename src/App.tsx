@@ -12,7 +12,8 @@ import {
   HelpCircle,
   Bookmark,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Coins
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -22,6 +23,7 @@ import ThemeToggle from "./components/ThemeToggle";
 import HistoryDrawer from "./components/HistoryDrawer";
 import ShortcutsModal from "./components/ShortcutsModal";
 import CalculatorKeypad from "./components/CalculatorKeypad";
+import CurrencyConverter from "./components/CurrencyConverter";
 
 export default function App() {
   // --- States ---
@@ -47,6 +49,17 @@ export default function App() {
   // Dialog/Modal states
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"calculator" | "currency">("calculator");
+
+  const handleApplyCurrencyResult = (val: string) => {
+    setCurrentInput(val);
+    setFormula("");
+    setLastFormula("");
+    setRawResult(Number(val));
+    setIsEvaluated(true);
+    setIsError(false);
+    setActiveTab("calculator");
+  };
 
   // Precision settings states
   const [precisionMode, setPrecisionMode] = useState<"fixed" | "scientific">(() => {
@@ -85,12 +98,28 @@ export default function App() {
   // Sync theme with HTML document element for tailwind dark: selectors
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
+    
+    const applyTheme = () => {
+      root.classList.add("theme-transitioning");
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      localStorage.setItem("nexuscalc_theme", theme);
+      
+      setTimeout(() => {
+        root.classList.remove("theme-transitioning");
+      }, 500);
+    };
+
+    if (typeof document !== "undefined" && (document as any).startViewTransition) {
+      (document as any).startViewTransition(() => {
+        applyTheme();
+      });
     } else {
-      root.classList.remove("dark");
+      applyTheme();
     }
-    localStorage.setItem("nexuscalc_theme", theme);
   }, [theme]);
 
   // --- Keyboard Input Mapping ---
@@ -541,7 +570,43 @@ export default function App() {
         {/* Calculator Canvas Wrapper */}
         <div className="w-full bg-white dark:bg-slate-950/40 backdrop-blur-md md:border md:border-zinc-200/80 md:dark:border-slate-800/60 rounded-3xl md:shadow-2xl md:dark:shadow-black/60 overflow-hidden flex flex-col">
           
-          {/* Display Area Panel */}
+          {/* Premium Mode Switching Tabs */}
+          <div className="flex border-b border-zinc-200/80 dark:border-slate-800/60 bg-zinc-50/50 dark:bg-slate-900/10 shrink-0">
+            <button
+              id="tab-calculator-btn"
+              onClick={() => {
+                triggerVibration();
+                setActiveTab("calculator");
+              }}
+              className={`flex-1 py-4 px-4 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
+                activeTab === "calculator"
+                  ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-950/10"
+                  : "border-transparent text-zinc-400 dark:text-slate-500 hover:text-zinc-600 dark:hover:text-slate-400"
+              }`}
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Scientific Engine</span>
+            </button>
+            <button
+              id="tab-currency-btn"
+              onClick={() => {
+                triggerVibration();
+                setActiveTab("currency");
+              }}
+              className={`flex-1 py-4 px-4 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
+                activeTab === "currency"
+                  ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-950/10"
+                  : "border-transparent text-zinc-400 dark:text-slate-500 hover:text-zinc-600 dark:hover:text-slate-400"
+              }`}
+            >
+              <Coins className="w-4 h-4" />
+              <span>Currency Exchange</span>
+            </button>
+          </div>
+
+          {activeTab === "calculator" ? (
+            <>
+              {/* Display Area Panel */}
           <div className="p-6 sm:p-8 bg-zinc-100/30 dark:bg-slate-900/60 border-b border-zinc-200/50 dark:border-slate-800 flex flex-col justify-end min-h-48 relative overflow-hidden">
             {/* Ambient glows inside display */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -660,6 +725,16 @@ export default function App() {
               onToggleDegRad={() => handleBtnPress("deg-rad")}
             />
           </div>
+          </>
+          ) : (
+            <div className="p-6 sm:p-8 bg-white dark:bg-slate-950/40">
+              <CurrencyConverter 
+                calculatorValue={activeOutputValue}
+                onApplyToCalculator={handleApplyCurrencyResult}
+                triggerVibration={triggerVibration}
+              />
+            </div>
+          )}
 
         </div>
 

@@ -105,9 +105,9 @@ export function preprocessTokens(tokens: string[]): string[] {
     const prev = i > 0 ? tokens[i - 1] : null;
     
     if (prev) {
-      const prevIsNum = !isNaN(Number(prev)) || prev in CONSTANTS || prev === "%";
+      const prevIsNum = !isNaN(Number(prev)) || prev in CONSTANTS || prev === "%" || prev === "x";
       const prevIsParenClose = prev === ")";
-      const currIsNum = !isNaN(Number(current)) || current in CONSTANTS;
+      const currIsNum = !isNaN(Number(current)) || current in CONSTANTS || current === "x";
       const currIsParenOpen = current === "(";
       const currIsFunc = FUNCTIONS.has(current);
       
@@ -116,7 +116,7 @@ export function preprocessTokens(tokens: string[]): string[] {
       // - ") (" or ") 5"
       // - "5 (" or ") pi"
       if (
-        (prevIsNum && (currIsParenOpen || currIsFunc || current in CONSTANTS)) ||
+        (prevIsNum && (currIsParenOpen || currIsFunc || current in CONSTANTS || current === "x")) ||
         (prevIsParenClose && (currIsNum || currIsParenOpen || currIsFunc))
       ) {
         step1.push("*");
@@ -156,7 +156,7 @@ export function toRPN(tokens: string[]): string[] {
   for (const token of tokens) {
     if (!isNaN(Number(token))) {
       output.push(token);
-    } else if (token in CONSTANTS) {
+    } else if (token in CONSTANTS || token === "x") {
       output.push(token);
     } else if (FUNCTIONS.has(token)) {
       stack.push(token);
@@ -216,12 +216,14 @@ export function toRPN(tokens: string[]): string[] {
 /**
  * Evaluates postfix RPN expression
  */
-export function evaluateRPN(rpn: string[], isDegrees: boolean = false): number {
+export function evaluateRPN(rpn: string[], isDegrees: boolean = false, xValue?: number): number {
   const stack: number[] = [];
   
   for (const token of rpn) {
     if (!isNaN(Number(token))) {
       stack.push(Number(token));
+    } else if (token === "x") {
+      stack.push(xValue !== undefined ? xValue : 0);
     } else if (token in CONSTANTS) {
       stack.push(CONSTANTS[token]);
     } else if (token in OPERATORS) {
@@ -322,7 +324,7 @@ export function evaluateRPN(rpn: string[], isDegrees: boolean = false): number {
 /**
  * Main function to evaluate a full math expression string
  */
-export function calculate(expressionStr: string, isDegrees: boolean = false): number {
+export function calculate(expressionStr: string, isDegrees: boolean = false, xValue?: number): number {
   if (!expressionStr.trim()) {
     throw new Error("Empty expression");
   }
@@ -348,7 +350,7 @@ export function calculate(expressionStr: string, isDegrees: boolean = false): nu
   const tokens = tokenize(normalized);
   const preprocessed = preprocessTokens(tokens);
   const rpn = toRPN(preprocessed);
-  const rawResult = evaluateRPN(rpn, isDegrees);
+  const rawResult = evaluateRPN(rpn, isDegrees, xValue);
   
   return stripPrecision(rawResult);
 }

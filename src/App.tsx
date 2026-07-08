@@ -13,7 +13,8 @@ import {
   Bookmark,
   Sparkles,
   RefreshCw,
-  Coins
+  Coins,
+  Activity
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -24,6 +25,7 @@ import HistoryDrawer from "./components/HistoryDrawer";
 import ShortcutsModal from "./components/ShortcutsModal";
 import CalculatorKeypad from "./components/CalculatorKeypad";
 import CurrencyConverter from "./components/CurrencyConverter";
+import MathPlotter from "./components/MathPlotter";
 
 export default function App() {
   // --- States ---
@@ -49,7 +51,7 @@ export default function App() {
   // Dialog/Modal states
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"calculator" | "currency">("calculator");
+  const [activeTab, setActiveTab] = useState<"calculator" | "currency" | "plotter">("calculator");
 
   const handleApplyCurrencyResult = (val: string) => {
     setCurrentInput(val);
@@ -602,6 +604,21 @@ export default function App() {
               <Coins className="w-4 h-4" />
               <span>Currency Exchange</span>
             </button>
+            <button
+              id="tab-plotter-btn"
+              onClick={() => {
+                triggerVibration();
+                setActiveTab("plotter");
+              }}
+              className={`flex-1 py-4 px-4 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
+                activeTab === "plotter"
+                  ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-950/10"
+                  : "border-transparent text-zinc-400 dark:text-slate-500 hover:text-zinc-600 dark:hover:text-slate-400"
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Graph Plotter</span>
+            </button>
           </div>
 
           {activeTab === "calculator" ? (
@@ -726,11 +743,19 @@ export default function App() {
             />
           </div>
           </>
-          ) : (
+          ) : activeTab === "currency" ? (
             <div className="p-6 sm:p-8 bg-white dark:bg-slate-950/40">
               <CurrencyConverter 
                 calculatorValue={activeOutputValue}
                 onApplyToCalculator={handleApplyCurrencyResult}
+                triggerVibration={triggerVibration}
+              />
+            </div>
+          ) : (
+            <div className="p-6 sm:p-8 bg-white dark:bg-slate-950/40">
+              <MathPlotter 
+                calculatorValue={currentInput || formula || activeOutputValue}
+                isDegrees={isDegrees}
                 triggerVibration={triggerVibration}
               />
             </div>
